@@ -1,6 +1,7 @@
 import unittest
+from unittest import mock
 import draughtsman
-from refract.contrib.apielements import ParseResult
+from refract.contrib.apielements import ParseResult, registry
 
 
 class DraughtsmanTests(unittest.TestCase):
@@ -19,3 +20,39 @@ class DraughtsmanTests(unittest.TestCase):
             parse_result.api.title.attributes.get('sourceMap').defract,
             [[[0, 8]]]
         )
+
+    def test_custom_deserialiser(self):
+        mock_init = mock.MagicMock(return_value=None)
+        mock_deserialise = mock.MagicMock()
+
+        class CustomDeserialiser:
+            __init__ = mock_init
+            deserialise = mock_deserialise
+
+        draughtsman.parse('# My API', deserialiser_cls=CustomDeserialiser)
+
+        mock_init.assert_called_once_with(
+            registry=registry
+        )
+        self.assertEqual(mock_deserialise.call_count, 1)
+
+    def test_custom_registry(self):
+        mock_init = mock.MagicMock(return_value=None)
+        mock_deserialise = mock.MagicMock()
+
+        class CustomDeserialiser:
+            __init__ = mock_init
+            deserialise = mock_deserialise
+
+        custom_registry = object()
+
+        draughtsman.parse(
+            '# My API',
+            deserialiser_cls=CustomDeserialiser,
+            custom_registry=custom_registry,
+        )
+
+        mock_init.assert_called_once_with(
+            registry=custom_registry
+        )
+        self.assertEqual(mock_deserialise.call_count, 1)
